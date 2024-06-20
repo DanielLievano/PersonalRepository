@@ -8,5 +8,6 @@ namespace Authorization.Aplication.Interfaces
     {
         public Task<bool> Authorization(User authorization);
         public bool CreateUser(User user);
+        public Task<IEnumerable<User>> GetUsers();
     }
 }
