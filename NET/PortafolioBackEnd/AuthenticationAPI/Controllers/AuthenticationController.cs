@@ -2,6 +2,8 @@
 using Authorization.Aplication.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
+using System.Diagnostics;
+using System.Reflection;
 
 namespace AuthenticationAPI.Controllers
 {
@@ -14,7 +16,7 @@ namespace AuthenticationAPI.Controllers
         {
             _authorizationService = authorizationService;
         }
-        [HttpPost]
+        [HttpPost("validateUser")]
         public ActionResult<Response<object>> ValidateUser([FromBody]User user)
         {
             Response<object> response;
@@ -35,14 +37,18 @@ namespace AuthenticationAPI.Controllers
             }
             catch (Exception ex)
             {
+                string methodAndClass = LogCurrentMethodName();
+                if (!_authorizationService.AuthorizationLog(methodAndClass,ex.Message))
+                    Debug.WriteLine(ex);
                 response = new Response<object> (ex.Message);
                 return UnprocessableEntity(response);
             }
         }
-        [HttpPut]
+        [HttpPut("createUser")]
         public ActionResult<Response<object>> PutUser([FromBody] User user)
         {
-            object response; try
+            object response; 
+            try
             {
                 if (!ModelState.IsValid)
                 {
@@ -62,11 +68,14 @@ namespace AuthenticationAPI.Controllers
             }
             catch(Exception ex)
             {
+                string methodAndClass = LogCurrentMethodName(); 
+                if (!_authorizationService.AuthorizationLog(methodAndClass, ex.Message))
+                    Debug.WriteLine(ex);
                 response = new Response<object>(ex.Message);
                 return UnprocessableEntity(response);
             }
         }
-        [HttpGet]
+        [HttpGet("getUsers")]
         public async Task<ActionResult<Response<object>>> GetUsers()
         {
             object response;
@@ -86,9 +95,20 @@ namespace AuthenticationAPI.Controllers
             }
             catch (Exception ex)
             {
+                string methodAndClass = LogCurrentMethodName();
+                if (!_authorizationService.AuthorizationLog(methodAndClass, ex.Message))
+                    Debug.WriteLine(ex);
                 response = new Response<object>(ex.Message);
                 return UnprocessableEntity(response);
             }
+        }
+        private string LogCurrentMethodName()
+        {
+            var stackTrace = new StackTrace();
+            var stackFrame = stackTrace.GetFrame(1);
+            var methodBase = stackFrame.GetMethod();
+            var methodName = methodBase.Name;
+            return $"method: {methodName}/ControllerOperation: {methodBase.DeclaringType.Name}";
         }
     }
 }

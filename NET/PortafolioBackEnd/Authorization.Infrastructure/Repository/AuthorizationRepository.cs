@@ -1,6 +1,9 @@
 ﻿using Authorization.Domain.Interfaces;
+using Authorization.Domain.Models;
 using Authorization.Infrastructure.Context;
 using Microsoft.EntityFrameworkCore;
+using System.Diagnostics;
+using System.Reflection;
 
 namespace Authorization.Infrastructure.Repository
 {
@@ -31,7 +34,10 @@ namespace Authorization.Infrastructure.Repository
             }
             catch (Exception ex)
             {
-                return false;
+                string methodAndClass = LogCurrentMethodName();
+                if (!AuthorizationLog(methodAndClass, ex.Message))
+                    Debug.WriteLine(ex);
+                throw new Exception(ex.Message);
             }
         }
 
@@ -43,7 +49,10 @@ namespace Authorization.Infrastructure.Repository
             }
             catch (Exception ex)
             {
-                return Enumerable.Empty<Domain.Models.Authorization>();
+                string methodAndClass = LogCurrentMethodName();
+                if (!AuthorizationLog(methodAndClass, ex.Message))
+                    Debug.WriteLine(ex);
+                throw new Exception(ex.Message);
             }
         }
 
@@ -55,8 +64,41 @@ namespace Authorization.Infrastructure.Repository
             }
             catch(Exception ex)
             {
-                return Task.FromResult(false);
+                string methodAndClass = LogCurrentMethodName();
+                if (!AuthorizationLog(methodAndClass, ex.Message))
+                    Debug.WriteLine(ex);
+                throw new Exception(ex.Message);
             }
+        }
+        public bool AuthorizationLog(string origin,string message)
+        {
+            int result;
+            LogEntry log = new LogEntry{
+                Origin = origin ?? string.Empty,
+                Message = message ?? string.Empty,
+            };
+            try
+            {
+                _authorizationDbContext.Add(log);
+                result = _authorizationDbContext.SaveChanges();
+                if(result > 0)
+                    return true;
+                else
+                    return false;
+
+            }catch(Exception ex)
+            {
+                Debug.WriteLine(ex);
+                return false;
+            }
+        }
+        private string LogCurrentMethodName()
+        {
+            var stackTrace = new StackTrace();
+            var stackFrame = stackTrace.GetFrame(1);
+            var methodBase = stackFrame.GetMethod();
+            var methodName = methodBase.Name;
+            return $"method: {methodName}/class: {methodBase.DeclaringType.Name}";
         }
     }
 }

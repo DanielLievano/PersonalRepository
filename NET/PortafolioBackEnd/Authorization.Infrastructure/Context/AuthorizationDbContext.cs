@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Authorization.Domain.Models;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 
 namespace Authorization.Infrastructure.Context
@@ -7,5 +8,6 @@ namespace Authorization.Infrastructure.Context
     {
         public AuthorizationDbContext(DbContextOptions options) : base (options) { }
         public DbSet<Domain.Models.Authorization> Authorizations { get; set; }
+        public DbSet<LogEntry> LogEntry { get; set; }
     }
 }

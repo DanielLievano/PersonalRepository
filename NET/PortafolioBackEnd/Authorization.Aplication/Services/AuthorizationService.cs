@@ -4,7 +4,9 @@ using Authorization.Domain.Interfaces;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -30,7 +32,10 @@ namespace Authorization.Aplication.Services
             }
             catch (Exception ex)
             {
-                return Task.FromResult(false);
+                string methodAndClass = LogCurrentMethodName();
+                if (!AuthorizationLog(methodAndClass, ex.Message))
+                    Debug.WriteLine(ex);
+                throw new Exception(ex.Message);
             }
         }
         public bool CreateUser(User CreateUser)
@@ -46,7 +51,10 @@ namespace Authorization.Aplication.Services
             }
             catch(Exception ex)
             {
-                return false;
+                string methodAndClass = LogCurrentMethodName();
+                if (!AuthorizationLog(methodAndClass, ex.Message))
+                    Debug.WriteLine(ex);
+                throw new Exception(ex.Message);
             }
         }
         public async Task<IEnumerable<User>> GetUsers()
@@ -62,8 +70,30 @@ namespace Authorization.Aplication.Services
                 return users;
             }catch (Exception ex)
             {
-                return Enumerable.Empty<User>();
+                string methodAndClass = LogCurrentMethodName();
+                if (!AuthorizationLog(methodAndClass,ex.Message))
+                    Debug.WriteLine(ex);
+                throw new Exception(ex.Message);
             }
-        } 
+        }
+        public bool AuthorizationLog(string origin, string message)
+        {
+            try
+            {
+                return _authorization.AuthorizationLog(origin, message);
+            }catch (Exception ex) {
+                Debug.WriteLine(ex);
+                throw new Exception(ex.Message);
+            }
+        }
+
+        private string LogCurrentMethodName()
+        {
+            var stackTrace = new StackTrace();
+            var stackFrame = stackTrace.GetFrame(1);
+            var methodBase = stackFrame.GetMethod();
+            var methodName = methodBase.Name;
+            return $"method: {methodName}/class: {methodBase.DeclaringType.Name}";
+        }
     }
 }
